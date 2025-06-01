@@ -1,0 +1,108 @@
+services:
+  auth-api:
+    build: ./auth-api
+    container_name: auth-api
+    volumes:
+      - ./auth-api:/var/www/html
+    ports:
+      - "8000:8000"
+    depends_on:
+      - cache-auth
+      - database-auth
+    networks:
+      - app-network
+
+  receive-send-api:
+    build: ./receive-send-api
+    container_name: receive-send-api
+    ports:
+      - "3000:3000"
+    depends_on:
+      - auth-api
+      - record-api
+    networks:
+      - app-network
+
+  record-api:
+    container_name: record-api
+    build: ./record-api
+    ports:
+      - "5000:5000"
+    depends_on:
+      - database-record
+      - cache-record
+    networks:
+      - app-network
+
+  database-auth:
+    image: postgres:15
+    container_name: postgres-auth
+    environment:
+      POSTGRES_DB: auth-db
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5433:5432"
+    volumes:
+      - users_data:/var/lib/postgresql/data
+    networks:
+      - app-network
+
+  database-record:
+    image: mysql:8.0
+    container_name: database-record
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: messages
+    volumes:
+      - messages_data:/var/lib/mysql
+      - ./record-api/config/db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - app-network
+
+
+
+  cache-auth:
+    image: redis:7
+    container_name: cache-auth
+    ports:
+      - "6379:6379"
+    networks:
+      - app-network
+
+  cache-record:
+    image: redis:7
+    container_name: cache-record
+    ports:
+      - "6380:6379"
+    networks:
+      - app-network
+
+  cache-receive-send:
+      image: redis:7
+      container_name: cache-receive-send
+      ports:
+        - "6381:6379"
+      networks:
+        - app-network
+
+  rabbitmq:
+      image: rabbitmq:3-management
+      container_name: rabbitmq
+      ports:
+        - "5672:5672"
+        - "15672:15672"
+      volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+      networks:
+        - app-network
+
+volumes:
+  users_data:
+  messages_data:
+  rabbitmq_data:
+
+networks:
+  app-network:
+    driver: bridge
