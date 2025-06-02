@@ -29,8 +29,17 @@ async function getCache(key) {
   }
 }
 
+async function delCache(key) {
+  try {
+    await client.del(key);
+  } catch (err) {
+    console.error('Error on deleting cache:', err);
+  }
+}
+
 module.exports = {
   client,
   setCache,
   getCache,
+  delCache
 };

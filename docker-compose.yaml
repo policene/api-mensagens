@@ -61,13 +61,13 @@ services:
     networks:
       - app-network
 
-
-
   cache-auth:
     image: redis:7
     container_name: cache-auth
     ports:
       - "6379:6379"
+    volumes:
+      - cache_auth_data:/data     
     networks:
       - app-network
 
@@ -76,6 +76,8 @@ services:
     container_name: cache-record
     ports:
       - "6380:6379"
+    volumes:
+      - cache_record_data:/data
     networks:
       - app-network
 
@@ -84,6 +86,8 @@ services:
       container_name: cache-receive-send
       ports:
         - "6381:6379"
+      volumes:
+        - cache_receive_send_data:/data
       networks:
         - app-network
 
@@ -102,7 +106,10 @@ volumes:
   users_data:
   messages_data:
   rabbitmq_data:
-
+  cache_auth_data:
+  cache_record_data:
+  cache_receive_send_data:
+  
 networks:
   app-network:
     driver: bridge

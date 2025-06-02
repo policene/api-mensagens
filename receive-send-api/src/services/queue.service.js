@@ -1,6 +1,6 @@
 const axios = require('axios');
 const { connectRabbitMQ } = require('../config/rabbitmq');
-
+const { delCache } = require('../config/redis');
 const RECORD_API_URL = 'http://record-api:5000/messages';
 
 async function sendMessage(queueName, messageData) {
@@ -37,12 +37,15 @@ async function processMessages(queueName) {
                         sender_id: content.userIdSend,
                         receiver_id: content.userIdReceive
                     });
-                    channel.ack(msg); // Confirma o processamento da mensagem
+
+                    await delCache(`messages:user:${content.userIdSend}`);
+
+                    channel.ack(msg); 
                     processedMessages.push(content);
                     console.log(`[QueueService] Mensagem da fila ${queueName} processada e enviada para Record-API.`);
                 } catch (err) {
                     console.error('[QueueService] Erro ao enviar para Record-API, reenfileirando:', err.message);
-                    channel.nack(msg, false, true); // Reenfileira a mensagem em caso de erro
+                    channel.nack(msg, false, true); 
                 }
             }
         }
